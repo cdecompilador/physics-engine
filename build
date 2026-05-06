@@ -1,0 +1,45 @@
+#!/bin/bash
+
+mkdir -p bin
+
+CFLAGS="-std=c++17 -Wall -Wextra
+    -Wno-c++98-compat -Wno-c++98-compat-pedantic
+    -Wno-documentation -Wno-documentation-unknown-command -Wno-old-style-cast
+    -Wno-nonportable-system-include-path
+    -Wno-missing-prototypes -Wno-unused-parameter
+    -Wno-implicit-int-float-conversion -Wno-sign-conversion -Wno-shorten-64-to-32
+    -Wno-unsafe-buffer-usage -Wno-zero-as-null-pointer-constant
+    -Wno-reserved-macro-identifier -Wno-reserved-identifier
+    -Wno-unused-macros -Wno-extra-semi-stmt"
+
+if [ ! -f "bin/imgui.o" ]; then
+    clang++ $CFLAGS -Os -c \
+        -Ivendor/imgui $(pkg-config --cflags glfw3) \
+        -DNOMINMAX \
+        vendor/imgui/imgui.cpp \
+        vendor/imgui/imgui_draw.cpp \
+        vendor/imgui/imgui_tables.cpp \
+        vendor/imgui/imgui_widgets.cpp \
+        vendor/imgui/backends/imgui_impl_glfw.cpp \
+        vendor/imgui/backends/imgui_impl_opengl3.cpp
+    mv imgui.o imgui_draw.o imgui_tables.o imgui_widgets.o imgui_impl_glfw.o imgui_impl_opengl3.o bin/
+fi
+[ $? -ne 0 ] && exit 1
+
+if [ "$1" = "release" ]; then
+    clang++ $CFLAGS -Os -c \
+        -I. -Ivendor/imgui $(pkg-config --cflags glfw3) \
+        -DNOMINMAX \
+        physics_engine.cpp -o bin/physics_engine.o
+else
+    clang++ $CFLAGS -g -c \
+        -I. -Ivendor/imgui $(pkg-config --cflags glfw3) \
+        -DNOMINMAX -DDEBUG \
+        physics_engine.cpp -o bin/physics_engine.o
+fi
+[ $? -ne 0 ] && exit 1
+
+clang++ bin/physics_engine.o \
+    bin/imgui.o bin/imgui_draw.o bin/imgui_tables.o bin/imgui_widgets.o \
+    bin/imgui_impl_glfw.o bin/imgui_impl_opengl3.o \
+    $(pkg-config --libs glfw3) -lGL -o bin/physics-engine

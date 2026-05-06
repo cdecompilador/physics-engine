@@ -1,0 +1,20 @@
+# Build output
+bin/
+*.obj
+
+# IDE and editor
+.vs/
+.vscode/
+*.sln
+*.vcxproj*
+*.cbp
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.swp
+*~

@@ -27,12 +27,18 @@ if not exist "bin\imgui.obj" (
 )
 
 if "%1"=="release" (
+    set LINK_FLAGS=
+) else (
+    set LINK_FLAGS=/DEBUG
+)
+
+if "%1"=="release" (
     clang-cl %CFLAGS% -Os -c ^
         -I. -Ivendor\imgui -Ivendor\glfw-win32\include ^
         -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS ^
         physics_engine.cpp -Fo"bin\\"
 ) else (
-    clang-cl %CFLAGS% -g -c ^
+    clang-cl %CFLAGS% /Zi -c ^
         -I. -Ivendor\imgui -Ivendor\glfw-win32\include ^
         -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS -DDEBUG ^
         physics_engine.cpp -Fo"bin\\"
@@ -44,7 +50,7 @@ radlink ^
     bin\imgui.obj bin\imgui_draw.obj bin\imgui_tables.obj bin\imgui_widgets.obj ^
     bin\imgui_impl_glfw.obj bin\imgui_impl_opengl3.obj ^
     vendor\glfw-win32\glfw3.lib opengl32.lib user32.lib gdi32.lib shell32.lib ^
-    -out:"bin\physics-engine.exe"
+    -out:"bin\physics-engine.exe" %LINK_FLAGS%
 if errorlevel 1 goto error
 
 goto end

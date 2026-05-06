@@ -205,6 +205,8 @@ void resolve_particle_particle_collision(
 
     p1.position.x += collision.normal_x * collision.penetration * 0.5f;
     p1.position.y += collision.normal_y * collision.penetration * 0.5f;
+    p2.position.x += -1.f * (collision.normal_x * collision.penetration * 0.5f);
+    p2.position.y += -1.f * (collision.normal_y * collision.penetration * 0.5f);
 
     float rel_vel_x = p1.velocity.x - p2.velocity.x;
     float rel_vel_y = p1.velocity.y - p2.velocity.y;
@@ -212,7 +214,7 @@ void resolve_particle_particle_collision(
     float vel_along_normal = rel_vel_x * collision.normal_x +
                             rel_vel_y * collision.normal_y;
 
-    if (vel_along_normal > 0.0f) return;
+    if (vel_along_normal < 0.0f) return;
 
     float restitution = std::min(p1.damping, p2.damping);
     float j = -(1.0f + restitution) * vel_along_normal / 2.0f;
@@ -252,7 +254,7 @@ int main(int argc, char const* argv[]) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Physics Engine 2", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 1000, "Physics Engine 2", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return 1;
@@ -283,17 +285,46 @@ int main(int argc, char const* argv[]) {
         boundary.barycenter = calculate_barycenter(boundary.points);
         state.boundaries.push_back(boundary);
     }
-    for (int i = 0; i < 10; i++) {
-        Particle p;
-        p.position = Vec2(200 + i * 60, 100 + i * 20);
-        p.initial_position = p.position;
-        p.velocity = Vec2(0, 0);
-        p.radius = 20.0f;
-        p.gravity = 9.81f;
-        p.damping = 0.8f;
-        p.is_resting = false;
-        state.particles.push_back(p);
-    }
+
+	auto point_at = [](float x, float y, float gravity = 10.f) {
+		Particle p;
+		p.position = Vec2(x, y);
+    	p.initial_position = p.position;
+		p.velocity = Vec2(0, 0);
+		p.gravity = gravity;
+		p.radius = 20.f;
+    	p.damping = 0.8f;
+
+		return p;
+	};
+
+	float triangle_height = 5;
+	float row_spacing = 50;
+	float elem_radius = 20;
+	float elem_diameter = 2 * elem_radius;
+	float x_offset = 100;
+	float y_offset = 300;
+
+	int N = triangle_height;
+
+	float gap_entre_base = 30;
+	float gap_lateral_base = gap_entre_base / 2;
+
+	float bottom_width = N * (elem_diameter + gap_entre_base);
+	float center_x = 100 + bottom_width / 2;
+
+	for (int row = 0; row < triangle_height; row++) {
+		int elems_per_row = row + 1;
+		float y = row * row_spacing + y_offset;
+		float row_w = elems_per_row * (elem_diameter + gap_entre_base);
+		float x_start = (center_x - row_w / 2 + gap_lateral_base + elem_radius) + x_offset;
+
+		for (int elem = 0; elem < elems_per_row; elem++) {
+			float x = x_start + elem * (elem_diameter + gap_entre_base);
+			float gravity = (1.f - std::min(y, 1000.f) / 1000.f) * 10.f;
+			state.particles.push_back(point_at(x, y, gravity));
+		}
+	}
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
